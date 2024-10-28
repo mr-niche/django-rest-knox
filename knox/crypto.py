@@ -14,10 +14,15 @@ def create_token_string() -> str:
 
 def make_hex_compatible(token: str) -> bytes:
     """
-    We need to make sure that the token, that is send is hex-compatible.
-    When a token prefix is used, we cannot guarantee that.
+    Ensure a token, which may contain a TOKEN_PREFIX, is hex-compatible before hashing.
     """
-    return binascii.unhexlify(binascii.hexlify(bytes(token, 'utf-8')))
+    try:
+        # use the original method for hashing a token pre v5.0.*
+        # this ensure tokens generated in v4.2 will remain valid in v5.1+
+        return binascii.unhexlify(token)
+    except (binascii.Error, ValueError):
+        # if a token has a prefix, encode it so that it's hex-compatible and can be hashed
+        return binascii.hexlify(token.encode('utf-8'))
 
 
 def hash_token(token: str) -> str:

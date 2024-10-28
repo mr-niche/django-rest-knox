@@ -1,6 +1,10 @@
 ## 5.1.0
 - Removed `token_key` which was no longer necessary after removal of salt in 4.2.0
-- Fix old tokens not being accepted in 5.0.0, 5.0.1 and 5.0.2
+- Revert `make_hex_compatible` to original implementation in 4.2.0
+  - This change allows a clean upgrade from 4.2.0 -> 5.1.0 (existing tokens will continue to work)
+  - NOTE: This change will _not_ work with tokens generated in 5.0.* versions!
+- Updates local testing docker image and script
+  - Only tests python 3.12 by default - CI handles testing the entire matrix
 
 ## 5.0.2
 - Implement AUTO_REFRESH_MAX_TTL to limit total token lifetime when AUTO_REFRESH = True

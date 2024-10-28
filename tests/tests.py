@@ -507,10 +507,17 @@ class AuthTestCase(TestCase):
             self.assertEqual(response.status_code, 200)
         reload(views)
 
-    def test_prefix_set_longer_than_max_length_raises_valueerror(self):
-        with self.assertRaises(ValueError):
-            with override_settings(REST_KNOX=token_prefix_too_long_knox):
-                pass
+    def test_prefix_set_longer_than_max_length_raises_value_error(self):
+        from knox.settings import reload_api_settings
+
+        invalid_setting = {
+            'TOKEN_PREFIX': token_prefix_too_long
+        }
+
+        with self.assertRaises(ValueError) as context:
+            reload_api_settings(setting='REST_KNOX', value=invalid_setting)
+
+        self.assertEqual(str(context.exception), "Illegal TOKEN_PREFIX length")
 
     def test_tokens_created_before_prefix_still_work(self):
         self.client.credentials(
@@ -532,16 +539,14 @@ class AuthTestCase(TestCase):
             self.assertEqual(response.status_code, 200)
         reload(views)
 
-    def test_old_tokens_still_work(self):
+    def test_v4_2_tokens_still_work(self):
+        """Verify that tokens generated with v4.2.0 remain valid in v5.1.0+"""
         self.assertEqual(AuthToken.objects.count(), 0)
 
         old_token = "02d233c901e7bd38df1dbc486b7e22c5c81b089c40cbb31d35d7b032615f5778"
         # Hash generated using crypto.hash_token on 4.2.0 with
         # SECURE_HASH_ALGORITHM = 'cryptography.hazmat.primitives.hashes.SHA512'
-        old_hash = (
-            "c7f9f2904decf77e0fa0341bc3eb96daa1437649825f4bfdd38cdad64d69c4be55938d71f17"
-            "34131c656f9bbbfc5d991bef295accd268921b23d9cdd0d9d60d0"
-        )
+        old_hash = "d74a4d2e7b8cb90e432aba33d75b8a6d803091d5a5d758d0ae70558573ceae01439cffbe43182470b73e7001dbbd96cbf12cbcbebe36b24cf4c4cb3198b936fc"
 
         AuthToken(
             digest=old_hash,
@@ -553,7 +558,4 @@ class AuthTestCase(TestCase):
         request.META = {'HTTP_AUTHORIZATION': f'Token {old_token}'}
         user, auth_token = TokenAuthentication().authenticate(request)
         self.assertEqual(self.user, user)
-        self.assertEqual(
-            old_hash,
-            auth_token.digest,
-        )
+        self.assertEqual(old_hash, auth_token.digest)
