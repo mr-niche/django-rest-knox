@@ -18,11 +18,11 @@ def make_hex_compatible(token: str) -> bytes:
     """
     try:
         # use the original method for hashing a token pre v5.0.*
-        # this ensure tokens generated in v4.2 will remain valid in v5.1+
+        # this ensures tokens generated in v4.2 will remain valid in v5.1+
         return binascii.unhexlify(token)
     except (binascii.Error, ValueError):
         # if a token has a prefix, encode it so that it's hex-compatible and can be hashed
-        return binascii.hexlify(token.encode('utf-8'))
+        return bytes(token, 'utf-8')
 
 
 def hash_token(token: str) -> str:
